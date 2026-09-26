@@ -22,6 +22,7 @@ GitHub Copilot was used for scaffolding the initial frontend component structure
 - Tailwind theme tokens and custom color system for the ledger-inspired design
 - Drizzle ORM table configuration and schema ideas
 - Jest test file structure and API test cases for create, list, search, pagination, and status update flows
+- Vitest + @testing-library/react component test structure for LeadForm validation, StatusBadge popover interaction and keyboard accessibility, SearchBar, Pagination, and LeadTable rendering
 - Initial UI state architecture and form validation logic
 - Visual refinements to the table, row styling, and status interaction pattern
 - Initial draft of the project documentation and handoff notes
@@ -47,6 +48,7 @@ These are the technical and project-specific items that were reviewed and finali
   - src/components/LeadTable.tsx for ledger-style rendering and timestamp formatting
   - src/components/StatusBadge.tsx for the combined badge + popover control behavior
   - src/components/SearchBar.tsx and src/components/Pagination.tsx for search and page controls
+  - component test coverage using Vitest + @testing-library/react + @testing-library/jest-dom + @testing-library/user-event for LeadForm validation, StatusBadge popover interaction and keyboard accessibility, SearchBar, Pagination, and LeadTable rendering
 - Environment variables and deployment details:
   - DATABASE_URL for Neon Postgres
   - PORT for Render

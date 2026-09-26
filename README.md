@@ -56,6 +56,10 @@ PostgreSQL (Neon)
 | Validation | Zod |
 | Testing | Jest + Supertest |
 
+### Frontend testing
+
+- Frontend: Vitest + @testing-library/react + @testing-library/jest-dom + @testing-library/user-event for component tests (LeadForm validation, StatusBadge popover interaction and keyboard accessibility, SearchBar, Pagination, LeadTable rendering)
+
 ## Setup Instructions
 
 ### 1. Clone the project
@@ -77,7 +81,13 @@ Create the backend environment file with the following variables:
 - DATABASE_URL
 - PORT
 - FRONTEND_ORIGIN
-- .env.test for the separate Neon test branch URL
+
+Create backend/.env with:
+- DATABASE_URL
+- PORT
+- FRONTEND_ORIGIN
+
+Create backend/.env.test with a separate Neon test-branch DATABASE_URL, used only when running tests.
 
 Run Drizzle migrations manually against each environment's DATABASE_URL:
 
@@ -118,6 +128,13 @@ cd backend
 npm test
 ```
 
+Frontend component tests are run with Vitest + Testing Library:
+
+```bash
+cd frontend
+npm test
+```
+
 Use a separate Neon test branch for the test database, as required by the project setup. This prevents test runs from mutating the production or development database.
 
 ## Deployment Steps
@@ -155,7 +172,7 @@ https://frontend-pi-henna-93.vercel.app
 | Method | Path | Body | Response Shape |
 | --- | --- | --- | --- |
 | GET | /leads | None | { status, message, data, pagination } |
-| POST | /leads | { name, email, phone, status? } | { status, message, data } |
+| POST | /leads | { name, email, phone } | { status, message, data } |
 | PATCH | /leads/:id/status | { status } | { status, message, data } |
 
 Notes:
@@ -177,7 +194,6 @@ Notes:
 - Add authentication (JWT) to protect write endpoints.
 - Add rate limiting (express-rate-limit) on public endpoints.
 - Return total lead count alongside totalPages for richer UI and analytics.
-- Add frontend component tests using React Testing Library alongside the existing backend tests.
 - Add soft-delete for leads instead of hard delete if delete is ever introduced.
 - Add sorting by created_at, name, or status in addition to search.
 - Automate migrations as part of the Render deploy step instead of running them manually for each environment.
