@@ -20,15 +20,29 @@ export const useLeads = () => {
   const [pagination, setPagination] = useState<Pagination>(initialPagination);
   const [page, setPage] = useState<number>(1);
   const [search, setSearch] = useState<string>("");
+  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState<boolean>(false);
   const [updatingStatusIds, setUpdatingStatusIds] = useState<number[]>([]);
 
   const searchTimeoutRef = useRef<number | null>(null);
+  const requestIdRef = useRef(0);
+
+  const getApiErrorMessage = useCallback((caughtError: unknown, fallback: string) => {
+    if (typeof caughtError === "object" && caughtError !== null && "response" in caughtError) {
+      const response = (caughtError as { response?: { data?: { message?: string } } }).response;
+      if (response?.data?.message) {
+        return response.data.message;
+      }
+    }
+
+    return caughtError instanceof Error ? caughtError.message : fallback;
+  }, []);
 
   const loadLeads = useCallback(
     async (nextPage: number, nextSearch: string) => {
+      const requestId = ++requestIdRef.current;
       setLoading(true);
       setError(null);
 
@@ -39,16 +53,26 @@ export const useLeads = () => {
           search: nextSearch,
         });
 
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
+
         setLeads(response.data);
         setPagination(response.pagination);
       } catch (caughtError) {
-        const message = caughtError instanceof Error ? caughtError.message : "Could not load leads.";
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
+
+        const message = getApiErrorMessage(caughtError, "Could not load leads.");
         setError(message);
       } finally {
-        setLoading(false);
+        if (requestId === requestIdRef.current) {
+          setLoading(false);
+        }
       }
     },
-    [pagination.size],
+    [getApiErrorMessage, pagination.size],
   );
 
   useEffect(() => {
@@ -57,8 +81,8 @@ export const useLeads = () => {
     }
 
     searchTimeoutRef.current = window.setTimeout(() => {
-      setPage(1);
-    }, 400);
+      setDebouncedSearch(search);
+    }, 300);
 
     return () => {
       if (searchTimeoutRef.current) {
@@ -68,11 +92,15 @@ export const useLeads = () => {
   }, [search]);
 
   useEffect(() => {
-    void loadLeads(page, search);
-  }, [page, search, loadLeads]);
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    void loadLeads(page, debouncedSearch);
+  }, [page, debouncedSearch, loadLeads]);
 
   const addLead = useCallback(
-    async (input: NewLeadInput): Promise<boolean> => {
+    async (input: NewLeadInput): Promise<{ success: boolean; message?: string }> => {
       setIsCreating(true);
       setError(null);
 
@@ -82,16 +110,15 @@ export const useLeads = () => {
         setPage(1);
         setSearch("");
         await loadLeads(1, "");
-        return true;
+        return { success: true };
       } catch (caughtError) {
-        const message = caughtError instanceof Error ? caughtError.message : "Could not create lead. Please try again.";
-        setError(message);
-        return false;
+        const message = getApiErrorMessage(caughtError, "Could not create lead. Please try again.");
+        return { success: false, message };
       } finally {
         setIsCreating(false);
       }
     },
-    [loadLeads],
+    [getApiErrorMessage, loadLeads],
   );
 
   const changeStatus = useCallback(
@@ -126,14 +153,14 @@ export const useLeads = () => {
           ),
         );
 
-        const message = caughtError instanceof Error ? caughtError.message : "Could not update status.";
+        const message = getApiErrorMessage(caughtError, "Could not update status.");
         setError(message);
         return false;
       } finally {
         setUpdatingStatusIds((currentIds) => currentIds.filter((currentId) => currentId !== id));
       }
     },
-    [leads],
+    [getApiErrorMessage, leads],
   );
 
   return {

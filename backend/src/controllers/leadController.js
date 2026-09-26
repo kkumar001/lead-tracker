@@ -6,14 +6,19 @@ const getAllLeads = async (req, res) => {
     const { search, page, pageSize } = req.query;
     const pageNum = Number(page) || 1;
     const pageSizeNum = Number(pageSize) || 10;
+    const normalizedSearch = typeof search === 'string' ? search.trim() : '';
 
     try {
         let allLeads;
         let totalCountQuery;
 
-        if (search) {
-            const searchTerm = `%${search.trim()}%`;
-            const condition = or(ilike(leads.name, searchTerm), ilike(leads.email, searchTerm));
+        if (normalizedSearch) {
+            const searchTerm = `%${normalizedSearch}%`;
+            const condition = or(
+                ilike(leads.name, searchTerm),
+                ilike(leads.email, searchTerm),
+                ilike(leads.phone, searchTerm)
+            );
 
             allLeads = await db.select().from(leads).where(condition).limit(pageSizeNum).offset((pageNum - 1) * pageSizeNum);
             totalCountQuery = await db.select({ count: count() }).from(leads).where(condition);
@@ -25,7 +30,7 @@ const getAllLeads = async (req, res) => {
         const total = totalCountQuery[0].count;
         const totalPages = Math.ceil(total / pageSizeNum);
 
-        if (pageNum > totalPages) {
+        if (pageNum > totalPages && totalPages > 0) {
             return res.status(404).json({
                 status: 404,
                 message: "Page number should be less than or equal to Total pages",
@@ -44,7 +49,6 @@ const getAllLeads = async (req, res) => {
             },
         });
     } catch (error) {
-        console.error("Error fetching leads:", error);
         res.status(500).json({
             status: 500,
             message: "Internal server error"
@@ -54,12 +58,25 @@ const getAllLeads = async (req, res) => {
 
 const createLead = async (req, res) => {
     const { name, email, phone } = req.body;
+    const normalizedName = typeof name === 'string' ? name.trim() : '';
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    const normalizedPhone = typeof phone === 'string' ? phone.trim() : '';
 
     try {
+        const existingLead = await db.select().from(leads).where(ilike(leads.email, normalizedEmail));
+
+        if (existingLead.length > 0) {
+            return res.status(400).json({
+                status: 400,
+                message: "Lead with this email already exists",
+                data: null
+            });
+        }
+
         const newLead = await db.insert(leads).values({
-            name,
-            email,
-            phone,
+            name: normalizedName,
+            email: normalizedEmail,
+            phone: normalizedPhone,
             status: 'New'
         }).returning();
 
@@ -69,7 +86,6 @@ const createLead = async (req, res) => {
             data: newLead[0]
         });
     } catch (error) {
-        console.error("Error creating lead:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 }
@@ -100,7 +116,6 @@ const updateLeadStatus = async (req, res) => {
             data: updatedLead[0]
         });
     } catch (error) {
-        console.error("Error updating lead status:", error);
         res.status(500).json({
             status: 500,
             message: "Internal server error",

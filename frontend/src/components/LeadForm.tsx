@@ -68,7 +68,7 @@ const LeadForm = ({ onSubmit, submitError, isSubmitting = false }: LeadFormProps
 
     const result = await onSubmit({
       name: form.name.trim(),
-      email: form.email.trim(),
+      email: form.email.trim().toLowerCase(),
       phone: form.phone.trim(),
     });
 

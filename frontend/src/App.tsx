@@ -12,14 +12,13 @@ const App = () => {
   const [formError, setFormError] = useState<string | null>(null);
 
   const handleAddLead = async (input: NewLeadInput): Promise<boolean> => {
-    const didCreate = await addLead(input);
-    if (didCreate) {
+    const result = await addLead(input);
+    if (result.success) {
       setFormError(null);
       return true;
     }
 
-    const message = "Could not create lead. Please try again.";
-    setFormError(message);
+    setFormError(result.message ?? "Could not create lead. Please try again.");
     return false;
   };
 
@@ -59,8 +58,8 @@ const App = () => {
       </section>
 
       <section className="table-shell">
-        {loading && leads.length === 0 ? (
-          <div className="empty-state">Loading leads...</div>
+        {loading ? (
+          <div className="empty-state">{search ? "Searching leads..." : "Loading leads..."}</div>
         ) : error && leads.length === 0 ? (
           <div className="empty-state">{error}</div>
         ) : (

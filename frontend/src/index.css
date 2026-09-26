@@ -161,11 +161,16 @@ select {
   }
 
   .table-shell {
-    @apply overflow-x-auto overflow-y-visible;
+    @apply relative overflow-visible;
+    z-index: 0;
+  }
+
+  .table-wrapper {
+    @apply relative overflow-visible;
   }
 
   .leads-table {
-    @apply w-full border-separate border-spacing-0 text-sm;
+    @apply w-full border-separate border-spacing-0 overflow-visible text-sm;
   }
 
   .leads-table th {
@@ -173,11 +178,11 @@ select {
   }
 
   .leads-table td {
-    @apply border-b border-stone/80 px-4 py-3 align-middle text-ink;
+    @apply relative border-b border-stone/80 px-4 py-3 align-middle text-ink overflow-visible;
   }
 
   .leads-table tbody tr {
-    @apply transition-colors duration-200;
+    @apply relative overflow-visible transition-colors duration-200;
   }
 
   .leads-table tbody tr:hover {
@@ -197,7 +202,7 @@ select {
   }
 
   .status-pill {
-    @apply inline-flex items-center gap-1.5 rounded-pill border border-transparent px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em];
+    @apply relative z-10 inline-flex items-center gap-1.5 rounded-pill border border-transparent px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em];
   }
 
   .status-badge--flash {
@@ -229,7 +234,8 @@ select {
   }
 
   .status-menu {
-    @apply absolute left-0 top-full z-30 mt-2 w-40 rounded-card border border-stone bg-white p-2;
+    @apply absolute right-0 top-[calc(100%+8px)] w-40 rounded-card border border-stone bg-white p-2 shadow-lg;
+    z-index: 9999;
   }
 
   .status-menu-item {

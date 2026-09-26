@@ -11,7 +11,7 @@ const SearchBar = ({ value, onChange }: SearchBarProps) => {
         <input
           type="text"
           value={value}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) => onChange(event.target.value.trim())}
           placeholder="Search by name or email"
           className="field-input search-input"
         />
