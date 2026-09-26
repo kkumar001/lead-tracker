@@ -66,7 +66,7 @@ const createLead = async (req, res) => {
         res.status(201).json({
             status: 201,
             message: "Lead created successfully",
-            data: newLead
+            data: newLead[0]
         });
     } catch (error) {
         console.error("Error creating lead:", error);

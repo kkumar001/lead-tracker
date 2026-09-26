@@ -10,6 +10,6 @@ router.get("/", getAllLeads);
 
 router.post("/", validateRequestMiddleware(createLeadSchema), createLead);
 
-router.put("/:id/status", validateRequestMiddleware(updateStatusSchema), updateLeadStatus);
+router.patch("/:id/status", validateRequestMiddleware(updateStatusSchema), updateLeadStatus);
 
 export default router;
