@@ -5,10 +5,17 @@ import leadRoutes from './routes/leadRoutes.js';
 
 const app = express();
 
+const allowedOrigins = process.env.FRONTEND_ORIGIN?.split(',').map(o => o.trim()) || [];
+
 const corsOptions = {
-  origin: process.env.FRONTEND_ORIGIN,
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-  credentials: true,
 };
 
 app.use(cors(corsOptions));
