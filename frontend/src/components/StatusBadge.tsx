@@ -13,12 +13,14 @@ const statusClassMap: Record<LeadStatus, string> = {
 
 interface StatusBadgeProps {
   status: LeadStatus;
-  onChange: (status: LeadStatus) => void;
+  onChange: (status: LeadStatus) => Promise<boolean> | boolean | void;
+  isUpdating?: boolean;
 }
 
-const StatusBadge = ({ status, onChange }: StatusBadgeProps) => {
+const StatusBadge = ({ status, onChange, isUpdating = false }: StatusBadgeProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isFlashing, setIsFlashing] = useState(false);
+  const [isError, setIsError] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -69,10 +71,22 @@ const StatusBadge = ({ status, onChange }: StatusBadgeProps) => {
     };
   }, [isOpen, status]);
 
-  const handleSelect = (nextStatus: LeadStatus) => {
-    onChange(nextStatus);
+  const handleSelect = async (nextStatus: LeadStatus) => {
     setIsOpen(false);
+
+    const didUpdate = await onChange(nextStatus);
+
+    if (didUpdate === false) {
+      setIsError(true);
+      setIsFlashing(false);
+      window.setTimeout(() => {
+        setIsError(false);
+      }, 300);
+      return;
+    }
+
     setIsFlashing(true);
+    setIsError(false);
 
     window.setTimeout(() => {
       setIsFlashing(false);
@@ -86,13 +100,15 @@ const StatusBadge = ({ status, onChange }: StatusBadgeProps) => {
       <button
         ref={buttonRef}
         type="button"
-        className={`status-pill ${statusClassMap[status]} ${isFlashing ? "status-badge--flash" : ""}`}
+        className={`status-pill ${statusClassMap[status]} ${isFlashing ? "status-badge--flash" : ""} ${isError ? "status-badge--error" : ""} ${isUpdating ? "opacity-80" : ""}`}
         aria-label={`Status: ${status}. Click to change.`}
         aria-haspopup="menu"
         aria-expanded={isOpen}
+        aria-busy={isUpdating}
         onClick={() => setIsOpen((currentOpen) => !currentOpen)}
+        disabled={isUpdating}
       >
-        <span>{status}</span>
+        <span>{isUpdating ? "Saving..." : status}</span>
         <svg viewBox="0 0 20 20" aria-hidden="true" className="status-chevron">
           <path d="M5 7.5l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
         </svg>

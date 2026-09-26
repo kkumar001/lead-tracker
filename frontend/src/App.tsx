@@ -1,55 +1,35 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import LeadForm from "./components/LeadForm";
 import LeadTable from "./components/LeadTable";
 import Pagination from "./components/Pagination";
 import SearchBar from "./components/SearchBar";
-import { mockLeads } from "./mocks/leads";
-import type { Lead, LeadStatus, NewLeadInput } from "./types/lead";
+import { useLeads } from "./hooks/useLeads";
+import type { LeadStatus, NewLeadInput } from "./types/lead";
 
 const App = () => {
-  const [leads, setLeads] = useState<Lead[]>(mockLeads);
-  const [searchText, setSearchText] = useState<string>("");
+  const { leads, pagination, search, page, loading, error, isCreating, updatingStatusIds, setSearch, setPage, addLead, changeStatus } = useLeads();
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const filteredLeads = useMemo(() => {
-    const normalizedSearch = searchText.trim().toLowerCase();
-
-    if (!normalizedSearch) {
-      return leads;
+  const handleAddLead = async (input: NewLeadInput): Promise<boolean> => {
+    const didCreate = await addLead(input);
+    if (didCreate) {
+      setFormError(null);
+      return true;
     }
 
-    return leads.filter((lead) => {
-      const matchesName = lead.name.toLowerCase().includes(normalizedSearch);
-      const matchesEmail = lead.email.toLowerCase().includes(normalizedSearch);
-      return matchesName || matchesEmail;
-    });
-  }, [leads, searchText]);
-
-  const handleAddLead = (input: NewLeadInput) => {
-    const nextLead: Lead = {
-      id: Date.now(),
-      name: input.name,
-      email: input.email,
-      phone: input.phone,
-      status: "New",
-      created_at: new Date().toISOString(),
-    };
-
-    setLeads((currentLeads) => [nextLead, ...currentLeads]);
+    const message = "Could not create lead. Please try again.";
+    setFormError(message);
+    return false;
   };
 
-  const handleStatusChange = (id: number, nextStatus: LeadStatus) => {
-    setLeads((currentLeads) =>
-      currentLeads.map((lead) =>
-        lead.id === id
-          ? {
-              ...lead,
-              status: nextStatus,
-            }
-          : lead,
-      ),
-    );
+  const handleStatusChange = async (id: number, nextStatus: LeadStatus): Promise<boolean> => {
+    const didUpdate = await changeStatus(id, nextStatus);
+    return didUpdate;
   };
+
+  const currentPage = pagination.page || page;
+  const totalPages = pagination.totalPages || 1;
 
   return (
     <main className="app-shell">
@@ -69,20 +49,26 @@ const App = () => {
       </header>
 
       <section className="panel form-panel mb-6">
-        <LeadForm onSubmit={handleAddLead} />
+        <LeadForm onSubmit={handleAddLead} submitError={formError} isSubmitting={isCreating} />
       </section>
 
       <section className="mb-4">
         <div className="table-toolbar">
-          <SearchBar value={searchText} onChange={setSearchText} />
+          <SearchBar value={search} onChange={setSearch} />
         </div>
       </section>
 
       <section className="table-shell">
-        <LeadTable leads={filteredLeads} onStatusChange={handleStatusChange} />
+        {loading && leads.length === 0 ? (
+          <div className="empty-state">Loading leads...</div>
+        ) : error && leads.length === 0 ? (
+          <div className="empty-state">{error}</div>
+        ) : (
+          <LeadTable leads={leads} onStatusChange={handleStatusChange} updatingLeadId={updatingStatusIds[0] ?? null} />
+        )}
       </section>
 
-      <Pagination page={1} totalPages={1} onPageChange={() => undefined} />
+      <Pagination page={currentPage} totalPages={totalPages} onPageChange={setPage} />
     </main>
   );
 };

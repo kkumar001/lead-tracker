@@ -18,8 +18,6 @@ describe('POST /leads', () => {
             .post('/leads')
             .send({ name: 'John Doe', email: 'john@example.com', phone: '9876543210' });
 
-        console.log(JSON.stringify(res.body, null, 2));
-
         expect(res.status).toBe(201);
         expect(res.body.data.name).toBe('John Doe');
         expect(res.body.data.status).toBe('New');

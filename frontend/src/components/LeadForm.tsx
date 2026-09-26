@@ -3,7 +3,9 @@ import { useState } from "react";
 import type { NewLeadInput } from "../types/lead";
 
 interface LeadFormProps {
-  onSubmit: (input: NewLeadInput) => void;
+  onSubmit: (input: NewLeadInput) => Promise<boolean> | boolean | void;
+  submitError?: string | null;
+  isSubmitting?: boolean;
 }
 
 interface FormErrors {
@@ -20,7 +22,7 @@ const emptyForm: NewLeadInput = {
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const LeadForm = ({ onSubmit }: LeadFormProps) => {
+const LeadForm = ({ onSubmit, submitError, isSubmitting = false }: LeadFormProps) => {
   const [form, setForm] = useState<NewLeadInput>(emptyForm);
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -55,7 +57,7 @@ const LeadForm = ({ onSubmit }: LeadFormProps) => {
     }));
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const nextErrors = validateForm(form);
@@ -64,14 +66,16 @@ const LeadForm = ({ onSubmit }: LeadFormProps) => {
       return;
     }
 
-    onSubmit({
+    const result = await onSubmit({
       name: form.name.trim(),
       email: form.email.trim(),
       phone: form.phone.trim(),
     });
 
-    setForm(emptyForm);
-    setErrors({});
+    if (result !== false) {
+      setForm(emptyForm);
+      setErrors({});
+    }
   };
 
   return (
@@ -127,13 +131,15 @@ const LeadForm = ({ onSubmit }: LeadFormProps) => {
       </div>
 
       <div className="flex justify-end">
-        <button type="submit" className="btn-primary">
+        <button type="submit" className="btn-primary" disabled={isSubmitting} aria-busy={isSubmitting}>
           <svg viewBox="0 0 24 24" aria-hidden="true" className="btn-icon">
             <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
-          Add lead
+          {isSubmitting ? "Adding..." : "Add lead"}
         </button>
       </div>
+
+      {submitError ? <p className="field-error">{submitError}</p> : null}
     </form>
   );
 };

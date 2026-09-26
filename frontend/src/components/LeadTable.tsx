@@ -12,9 +12,31 @@ const statusAccentMap: Record<LeadStatus, string> = {
 interface LeadTableProps {
   leads: Lead[];
   onStatusChange: (id: number, status: LeadStatus) => void;
+  updatingLeadId?: number | null;
 }
 
-const LeadTable = ({ leads, onStatusChange }: LeadTableProps) => {
+const formatDateTime = (value: string): string => {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value.replace("T", " ").replace("Z", "");
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  }).format(date).replace(",", "");
+};
+
+const LeadTable = ({ leads, onStatusChange, updatingLeadId = null }: LeadTableProps) => {
   if (leads.length === 0) {
     return <div className="empty-state">No leads found. Try adjusting your search.</div>;
   }
@@ -43,9 +65,13 @@ const LeadTable = ({ leads, onStatusChange }: LeadTableProps) => {
               <td>{lead.email}</td>
               <td>{lead.phone}</td>
               <td>
-                <StatusBadge status={lead.status} onChange={(nextStatus) => onStatusChange(lead.id, nextStatus)} />
+                <StatusBadge
+                  status={lead.status}
+                  isUpdating={updatingLeadId === lead.id}
+                  onChange={(nextStatus) => onStatusChange(lead.id, nextStatus)}
+                />
               </td>
-              <td>{new Date(lead.created_at).toLocaleDateString()}</td>
+              <td>{formatDateTime(lead.createdAt ?? lead.created_at ?? "")}</td>
             </tr>
           ))}
         </tbody>

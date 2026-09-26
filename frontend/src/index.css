@@ -77,6 +77,20 @@ select {
   }
 }
 
+@keyframes statusErrorPulse {
+  0% {
+    filter: brightness(1);
+  }
+  35% {
+    filter: brightness(1.05);
+    box-shadow: 0 0 0 3px rgba(166, 71, 60, 0.2);
+  }
+  100% {
+    filter: brightness(1);
+    box-shadow: none;
+  }
+}
+
 @layer components {
   .app-shell {
     @apply max-w-5xl mx-auto px-4 py-10 md:px-6;
@@ -188,6 +202,10 @@ select {
 
   .status-badge--flash {
     animation: statusPulse 0.3s ease-in-out;
+  }
+
+  .status-badge--error {
+    animation: statusErrorPulse 0.35s ease-in-out;
   }
 
   .status-chevron {
